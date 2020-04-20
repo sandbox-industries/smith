@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Euler 96
-"""
 def sudokuFileReader2():
     #reads in file from local disk and creates a dictionary with each key:value pair being a puzzle
     gridNameList=[]
@@ -17,11 +13,14 @@ def sudokuFileReader2():
                 y.append(int(i))
             gridAllOneList.append(y)
     sudokuTextFile.close()
+
     gridLists=[]
     for i in range(0,450,9):
         gridLists.append(gridAllOneList[i:i+9])
+
     gridDict=dict(zip(gridNameList,gridLists))
     return gridDict
+
 
 def squareValues(gridArray):
     #returns the values included in the 9 cell squares with s1 being the upper left, s2 the upper middle, .....
@@ -37,11 +36,50 @@ def squareValues(gridArray):
     squares["s9"]=gridArray[6:,6:].flatten()
     return squares
 
-def solver(gridArray, gridList):
+def setSquares(gridArray):
+    #maps cell y,x coordinates (not the cell values) to greater 9 square s1,s2,s3 and so on 
+    squareDict={}
+    for y in range(len(gridArray)):
+        horRow=gridArray[y]
+        for x in range(len(horRow)):
+            if y<3:
+                if x<3:
+                    squareDict[str(y)+str(x)]="s1"
+                    continue
+                if x>5:
+                    squareDict[str(y)+str(x)]="s3"
+                    continue
+                else:
+                    squareDict[str(y)+str(x)]="s2"
+                    continue
+            if y>5:
+                if x<3:
+                    squareDict[str(y)+str(x)]="s7"
+                    continue
+                if x>5:
+                    squareDict[str(y)+str(x)]="s9"
+                    continue
+                else:
+                    squareDict[str(y)+str(x)]="s8"
+                    continue
+            else:
+                if x<3:
+                    squareDict[str(y)+str(x)]="s4"
+                    continue
+                if x>5:
+                    squareDict[str(y)+str(x)]="s6"
+                    continue
+                else:
+                    squareDict[str(y)+str(x)]="s5"
+                    continue
+    return squareDict
+
+def solver(gridArray):    
     #fills in all zeros with all possible numbers for each cell
     squares=squareValues(gridArray)
     squareDict=setSquares(gridArray)
     allArray=np.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
+    gridList=gridArray.tolist()
     for y in range(len(gridArray)):
         horRow=gridArray[y]
         for x in range(len(horRow)):
@@ -52,31 +90,26 @@ def solver(gridArray, gridList):
                 allHor=np.setdiff1d(allArray, horRow)
                 allHorVert=np.setdiff1d(allHor, vertRow)
                 allHorVertSquare=np.setdiff1d(allHorVert, square)
-                gridList[y][x]=allHorVertSquare 
-    
-    #sets places with only one possible to that value
-    y=0
-    x=-1
-    for subList in gridList:
-        for item in subList:
-            x+=1
-            if type(item)==np.ndarray:
-                if len(item)==1:
-                     gridList[y][x]=item[0]
-                else:
-                     gridList[y][x]=0    
-        y+=1
-        x=-1
+                gridList[y][x]=allHorVertSquare
 
     gridArray=np.array(gridList)
-    print("sum=",gridArray.sum())
-    print(gridArray)
-    return(gridArray, gridList)       
+    #sets places with only one possible to that value
+    for y in range(len(gridArray)):
+        horRow=gridArray[y]
+        for x in range(len(horRow)):
+            if type(gridArray[y,x])==np.ndarray:
+                if len(gridArray[y,x])==1:
+                    gridArray[y,x]=gridArray[y,x][0]
+                else:
+                    gridArray[y,x]=0
+                    
+    return gridList
 
-def extraSolver(gridArray, gridList):
+def extraSolver(gridArray):
     #fills in all zeros with all possible numbers for each cell
     squares=squareValues(gridArray)
     squareDict=setSquares(gridArray)
+    gridList=gridArray.tolist()
     allArray=np.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
     for y in range(len(gridArray)):
         horRow=gridArray[y]
@@ -88,7 +121,9 @@ def extraSolver(gridArray, gridList):
                 allHor=np.setdiff1d(allArray, horRow)
                 allHorVert=np.setdiff1d(allHor, vertRow)
                 allHorVertSquare=np.setdiff1d(allHorVert, square)
-                gridList[y][x]=allHorVertSquare 
+                gridList[y][x]=allHorVertSquare
+    
+    gridList=solver(gridArray)
 
     #sets possibles created from above as an np.array and loops through them
     gridArray=np.array(gridList,dtype=object)
@@ -146,64 +181,131 @@ def extraSolver(gridArray, gridList):
                 if len(np.argwhere(gridArray[y,x]==valItem)) > 0:
                     gridList[y][x]=valItem 
     
-    #sets places with only one possible to that value
-    y=0
-    x=-1
-    for subList in gridList:
-        for item in subList:
-            x+=1
-            if type(item)==np.ndarray:
-                if len(item)==1:
-                     gridList[y][x]=item[0]
-                else:
-                     gridList[y][x]=0    
-        y+=1
-        x=-1
-
     gridArray=np.array(gridList)
-    print("sum=",gridArray.sum())
-    print(gridArray)
-    return(gridArray, gridList) 
-
-def setSquares(gridArray):
-    #maps cell y,x coordinates (not the cell values) to greater 9 square s1,s2,s3 and so on 
-    squareDict={}
+    #sets places with only one possible to that value
     for y in range(len(gridArray)):
         horRow=gridArray[y]
         for x in range(len(horRow)):
-            if y<3:
-                if x<3:
-                    squareDict[str(y)+str(x)]="s1"
-                    continue
-                if x>5:
-                    squareDict[str(y)+str(x)]="s3"
-                    continue
+            if type(gridArray[y,x])==np.ndarray:
+                if len(gridArray[y,x])==1:
+                    gridArray[y,x]=gridArray[y,x][0]
                 else:
-                    squareDict[str(y)+str(x)]="s2"
-                    continue
-            if y>5:
-                if x<3:
-                    squareDict[str(y)+str(x)]="s7"
-                    continue
-                if x>5:
-                    squareDict[str(y)+str(x)]="s9"
-                    continue
-                else:
-                    squareDict[str(y)+str(x)]="s8"
-                    continue
-            else:
-                if x<3:
-                    squareDict[str(y)+str(x)]="s4"
-                    continue
-                if x>5:
-                    squareDict[str(y)+str(x)]="s6"
-                    continue
-                else:
-                    squareDict[str(y)+str(x)]="s5"
-                    continue
-    return squareDict
+                    gridArray[y,x]=0    
 
-def runner2():
+    print("sum=",gridArray.sum())
+    print(gridArray)
+    return(gridArray) 
+
+def finalSolver(gridArray):
+    squares=squareValues(gridArray)
+    squareDict=setSquares(gridArray)
+    gridList=gridArray.tolist()
+    allArray=np.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
+    for y in range(len(gridArray)):
+        horRow=gridArray[y]
+        for x in range(len(horRow)):
+            if gridArray[y,x]==0:
+                vertRow=np.hsplit(gridArray,9)[x]
+                vertRow=vertRow.flatten()
+                square=squares[squareDict[str(y)+str(x)]]
+                allHor=np.setdiff1d(allArray, horRow)
+                allHorVert=np.setdiff1d(allHor, vertRow)
+                allHorVertSquare=np.setdiff1d(allHorVert, square)
+                gridList[y][x]=allHorVertSquare 
+
+    resetGridArray=np.copy(gridArray)
+    print("sum of reset array=",resetGridArray.sum())
+    print(resetGridArray)
+    newGridArray=np.array(gridList)
+    for y in range(len(newGridArray)):
+        horRow=newGridArray[y]
+        for x in range(len(horRow)):
+            if type(newGridArray[y,x])==np.ndarray:
+                if len(newGridArray[y,x])==2:
+
+                    for index in range(len(newGridArray[y,x])):
+                        print("adding in a",newGridArray[y,x][index],"at [y,x]","[",y,x,"]")
+                        gridArray[y,x]=newGridArray[y,x][index]
+                        print("sum=",gridArray.sum())
+                        print(gridArray)
+                        while checker(gridArray)==False:
+                            lastSum=gridArray.sum()
+                            
+                            gridArray=extraSolver(gridArray)
+                            updatedSum=gridArray.sum()
+                            if updatedSum==405:
+                                if checker(gridArray)==False:
+                                    gridArray=resetGridArray
+                                    break
+                                else:
+                                    return gridArray                                
+                            if updatedSum==lastSum:
+                                print("trying new value reseting gridArray")
+                                gridArray=resetGridArray
+                                gridArray[y,x]=0
+                                print("sum=",gridArray.sum())
+                                print(gridArray)
+                                break
+                            continue
+    print("\n\n\n!!!!!!!!!!!!!!!!!!!******complete failure*****!!!!!!!!!!!!!!!!!!!!!!!\n\n\n")
+    return gridArray
+
+def finalSolver2(gridArray):
+    squares=squareValues(gridArray)
+    squareDict=setSquares(gridArray)
+    gridList=gridArray.tolist()
+    allArray=np.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
+    for y in range(len(gridArray)):
+        horRow=gridArray[y]
+        for x in range(len(horRow)):
+            if gridArray[y,x]==0:
+                vertRow=np.hsplit(gridArray,9)[x]
+                vertRow=vertRow.flatten()
+                square=squares[squareDict[str(y)+str(x)]]
+                allHor=np.setdiff1d(allArray, horRow)
+                allHorVert=np.setdiff1d(allHor, vertRow)
+                allHorVertSquare=np.setdiff1d(allHorVert, square)
+                gridList[y][x]=allHorVertSquare 
+
+    resetGridArray=np.copy(gridArray)
+    print("sum of reset array=",resetGridArray.sum())
+    print(resetGridArray)
+    newGridArray=np.array(gridList)
+    for y in range(len(newGridArray)):
+        horRow=newGridArray[y]
+        for x in range(len(horRow)):
+            if type(newGridArray[y,x])==np.ndarray:
+                if len(newGridArray[y,x])==3:
+
+                    for index in range(len(newGridArray[y,x])):
+                        print("adding in a",newGridArray[y,x][index],"at [y,x]","[",y,x,"]")
+                        gridArray[y,x]=newGridArray[y,x][index]
+                        print("sum=",gridArray.sum())
+                        print(gridArray)
+                        while checker(gridArray)==False:
+                            lastSum=gridArray.sum()
+                            
+                            gridArray=extraSolver(gridArray)
+                            updatedSum=gridArray.sum()
+                            if updatedSum==405:
+                                if checker(gridArray)==False:
+                                    gridArray=resetGridArray
+                                    break
+                                else:
+                                    return gridArray 
+                            if updatedSum==lastSum:
+                                print("trying new value reseting gridArray")
+                                gridArray=resetGridArray
+                                gridArray[y,x]=0
+                                print("sum=",gridArray.sum())
+                                print(gridArray)
+                                break
+                            continue
+    print("\n\n\n!!!!!!!!!!!!!!!!!!!******complete failure*****!!!!!!!!!!!!!!!!!!!!!!!\n\n\n")
+    return gridArray
+
+def runner3():
+    sumList=[]
     #runs all functions, 1st tries solver, then extraSolver
     gridDict=sudokuFileReader2()
 #     print("\nData gathered into large dictionary of 50 sudoku puzzles")
@@ -224,34 +326,73 @@ def runner2():
         while gridArray.sum()!=405:
             lastSum=gridArray.sum()
             numberOfLoops+=1
-            print("solver on loop",numberOfLoops,"of",key)
-            gridArray, gridList=solver(gridArray, gridList)
+            print("extrSolver on loop",numberOfLoops,"of",key)
+            gridArray=extraSolver(gridArray)
             updatedSum=gridArray.sum()
             if updatedSum==405:
                 succesfulCounter+=1
                 print(key,"solved in",numberOfLoops,"loops!")
-                #add code here to capture first 3 values if ever finished
+                a=""
+                for number in gridArray[0,:3].tolist():
+                    a=a+str(number)
+                sumList.append(int(a))
                 break
             if updatedSum==lastSum:
-                print("FUCK FUCK FUCK Failed after loop",numberOfLoops,", on",key,"Time to call in the extraSolver")
+                print("FUCK FUCK FUCK Failed after loop",numberOfLoops,", on",key)
                 #stays in the extraSolver loop until no new values replace zeros
-                while gridArray.sum()!=405:
-                    lastSum=gridArray.sum()
-                    numberOfLoops+=1
-                    print("extraSolver on loop",numberOfLoops,"of",key)
-                    gridArray, gridList=extraSolver(gridArray, gridList)
+                gridArray=finalSolver(gridArray)
+                updatedSum=gridArray.sum()
+                if updatedSum==405:
+                    succesfulCounter+=1
+                    print(key,"solved in",numberOfLoops,"loops!")
+                    b=""
+                    for number in gridArray[0,:3].tolist():
+                        b=b+str(number)
+                    sumList.append(int(b))
+                    break                   
+                if updatedSum==lastSum:
+                    print("FUCK FUCK FUCK Failed after loop",numberOfLoops,", on",key)
+                    #stays in the extraSolver loop until no new values replace zeros
+                    gridArray=finalSolver2(gridArray)
                     updatedSum=gridArray.sum()
-                    if updatedSum==lastSum:
-                        print("EXTRA FUCK FUCK FUCK Failed after loop",numberOfLoops,", on",key)
-                        break
                     if updatedSum==405:
                         succesfulCounter+=1
                         print(key,"solved in",numberOfLoops,"loops!")
-                        #add code here to capture first 3 values if ever finished
+                        c=""
+                        for number in gridArray[0,:3].tolist():
+                            c=c+str(number)
+                        sumList.append(int(c))
+                        break                   
+                    if updatedSum==lastSum:
+                        print("EXTRA FUCK FUCK FUCK Failed after loop",numberOfLoops,", on",key)
                         break
+                    break
                 break
-            continue            
+            continue
     print("\n****Sudoku puzzle solver finished",succesfulCounter,"of 50 puzzles")
+    print("sumList has",len(sumList),"values and a sum of",sum(sumList))               
     
+def checker(gridArray):
+    if gridArray.sum()!=405:
+        print("failed total sum")
+        return False
+    for y in range(len(gridArray)):
+        horRow=gridArray[y]
+        if horRow.sum()!=45:
+            print("horRow failed check")
+            return False
+    for x in range(len(horRow)):
+        vertRow=np.hsplit(gridArray,9)[x]
+        vertRow=vertRow.flatten()
+        if vertRow.sum()!=45:
+            print("vertRow failed check")
+            return False
+    squares=squareValues(gridArray)
+    for k in squares.keys():
+        if squares[k].sum()!=45:
+            print("square failed check")
+            return False
+    return True
+
 import numpy as np
-runner2()
+runner3()
